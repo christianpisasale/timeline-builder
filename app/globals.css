@@ -20,3 +20,18 @@ input, select, textarea { font-family: inherit; }
   background: #fff; border: 1px solid #c8d0da; border-radius: 6px;
   box-shadow: 0 4px 18px rgba(13,24,70,.08);
 }
+.editable-field {
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 10px 12px;
+  transition: background-color .12s, border-color .12s;
+}
+.editable-field:hover:not(:disabled) {
+  background: #f7f9fb;
+  border-color: #dbe1e8;
+}
+.editable-field:focus:not(:disabled) {
+  background: #fff;
+  border-color: #0079c8;
+  outline: none;
+}

@@ -61,16 +61,3 @@ export const fmtDate = (s: string | null) => {
   return `${d.getDate()} ${MON[d.getMonth()]}`;
 };
 
-// Which dates drive rendering: revised when present, else original.
-export function effectiveDates(r: Row) {
-  const start = r.revised_start ?? r.original_start;
-  const finish = r.revised_finish ?? r.original_finish;
-  return { start, finish };
-}
-// True when a baseline exists and differs from the revised dates (slippage).
-export function hasSlippage(r: Row) {
-  return (
-    (r.revised_start && r.original_start && r.revised_start !== r.original_start) ||
-    (r.revised_finish && r.original_finish && r.revised_finish !== r.original_finish)
-  );
-}

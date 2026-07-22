@@ -25,6 +25,8 @@ export default function SquadsManager({
     markDirty();
   }
   async function deleteSquad(id: string) {
+    const squad = squads.find((s) => s.id === id);
+    if (!window.confirm(`Delete "${squad?.name || 'this squad'}"? Rows using it will be unassigned, not deleted.`)) return;
     await supabase.from('squads').delete().eq('id', id);
     setSquads((ss) => ss.filter((s) => s.id !== id).map((s, k) => ({ ...s, sort_order: k })));
     markDirty();

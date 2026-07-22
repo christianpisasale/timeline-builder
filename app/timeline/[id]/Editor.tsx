@@ -5,6 +5,10 @@ import { createClient } from '@/lib/supabase-browser';
 import { Row, Squad, Timeline, Rag, RowState } from '@/lib/timeline';
 import TimelineChart from '@/components/TimelineChart';
 
+function isInvalidRange(start: string | null, finish: string | null) {
+  return !!(start && finish && finish < start);
+}
+
 export default function Editor({
   timeline, initialSquads, initialRows, isOwner,
 }: { timeline: Timeline & { owner_id: string }; initialSquads: Squad[]; initialRows: Row[]; isOwner: boolean }) {
@@ -19,8 +23,13 @@ export default function Editor({
   const [dirty, setDirty] = useState(false);
   const [dragRowId, setDragRowId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'before' | 'after' } | null>(null);
+  const [showRevised, setShowRevised] = useState(false);
 
   const liveTimeline: Timeline = { ...timeline, title, description, chart_start: chartStart, chart_end: chartEnd };
+
+  const hasInvalidDates =
+    isInvalidRange(chartStart, chartEnd) ||
+    rows.some((r) => isInvalidRange(r.original_start, r.original_finish) || isInvalidRange(r.revised_start, r.revised_finish));
 
   function markDirty() { setDirty(true); }
 
@@ -36,13 +45,15 @@ export default function Editor({
       milestone: 'New milestone',
       rag: 'green',
       original_start: null, original_finish: null,
-      revised_start: chartStart, revised_finish: chartStart,
+      revised_start: null, revised_finish: null,
       is_milestone: true, state: 'active',
     };
     setRows((rs) => [...rs, newRow]);
     markDirty();
   }
   function deleteRow(id: string) {
+    const row = rows.find((r) => r.id === id);
+    if (!window.confirm(`Delete "${row?.milestone || 'this row'}"?`)) return;
     setRows((rs) => rs.filter((r) => r.id !== id));
     markDirty();
   }
@@ -97,12 +108,14 @@ export default function Editor({
 
   // autosave: any change to timeline meta or rows flushes shortly after the
   // user stops typing/dragging, instead of requiring a manual save click.
+  // Held back while any finish date precedes its start date, so invalid
+  // ranges never get persisted mid-edit.
   useEffect(() => {
-    if (!isOwner || !dirty) return;
+    if (!isOwner || !dirty || hasInvalidDates) return;
     const t = setTimeout(() => { save(); }, 1000);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dirty, title, description, chartStart, chartEnd, rows]);
+  }, [dirty, title, description, chartStart, chartEnd, rows, hasInvalidDates]);
 
   return (
     <div style={{ padding: '20px 28px 60px' }}>
@@ -113,29 +126,33 @@ export default function Editor({
         )}
         <div style={{ flex: 1 }} />
         {isOwner && (
-          <span style={{ fontSize: 12.5, color: '#55606c' }}>
-            {saving ? 'Saving…' : dirty ? 'Unsaved changes…' : 'All changes saved'}
+          <span style={{ fontSize: 12.5, color: hasInvalidDates ? '#d60023' : '#55606c' }}>
+            {hasInvalidDates ? 'Fix invalid dates to save' : saving ? 'Saving…' : dirty ? 'Unsaved changes…' : 'All changes saved'}
           </span>
         )}
       </div>
 
       {/* meta */}
-      <div className="card" style={{ padding: 18, marginBottom: 18 }}>
-        <input value={title} disabled={!isOwner}
+      <div className="card" style={{ padding: 22, marginBottom: 18 }}>
+        <input value={title} disabled={!isOwner} className="editable-field"
           onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-          style={{ fontSize: 22, fontWeight: 700, color: '#0d1846', border: 'none', width: '100%', outline: 'none' }} />
-        <textarea value={description} disabled={!isOwner} placeholder="Description shown above the timeline..."
+          style={{ fontSize: 22, fontWeight: 700, color: '#0d1846', width: '100%', marginBottom: 14 }} />
+        <textarea value={description} disabled={!isOwner} placeholder="Description shown above the timeline..." className="editable-field"
           onChange={(e) => { setDescription(e.target.value); markDirty(); }}
-          style={{ fontSize: 13, color: '#55606c', border: 'none', width: '100%', outline: 'none', resize: 'vertical', marginTop: 6, minHeight: 36 }} />
-        <div style={{ display: 'flex', gap: 16, marginTop: 10, fontSize: 12.5 }}>
+          style={{ fontSize: 13, color: '#55606c', width: '100%', resize: 'vertical', minHeight: 40, marginBottom: 18 }} />
+        <div style={{ display: 'flex', gap: 24, fontSize: 12.5, alignItems: 'center', paddingLeft: 12 }}>
           <label>Chart start <input type="date" value={chartStart} disabled={!isOwner} onChange={(e) => { setChartStart(e.target.value); markDirty(); }} style={dateInp} /></label>
-          <label>Chart end <input type="date" value={chartEnd} disabled={!isOwner} onChange={(e) => { setChartEnd(e.target.value); markDirty(); }} style={dateInp} /></label>
+          <label>Chart end <input type="date" value={chartEnd} disabled={!isOwner} onChange={(e) => { setChartEnd(e.target.value); markDirty(); }} style={isInvalidRange(chartStart, chartEnd) ? invalidDateInp : dateInp} title={isInvalidRange(chartStart, chartEnd) ? "Chart end can't be before chart start" : undefined} /></label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={showRevised} onChange={(e) => setShowRevised(e.target.checked)} />
+            Show revised dates
+          </label>
         </div>
       </div>
 
       {/* chart preview */}
-      <div className="card" style={{ padding: 16, marginBottom: 18 }}>
-        <TimelineChart timeline={liveTimeline} squads={squads} rows={rows} />
+      <div className="card" style={{ padding: 22, marginBottom: 18 }}>
+        <TimelineChart timeline={liveTimeline} squads={squads} rows={rows} showRevised={showRevised} />
       </div>
 
       {/* row editor */}
@@ -154,16 +171,23 @@ export default function Editor({
                   <th style={th}>RAG</th>
                   <th style={th}>Type</th>
                   <th style={th}>Milestone</th>
-                  <th style={th}>Orig start</th>
-                  <th style={th}>Orig finish</th>
-                  <th style={th}>Rev start</th>
-                  <th style={th}>Rev finish</th>
+                  <th style={th}>Start Date</th>
+                  <th style={th}>Finish Date</th>
+                  {showRevised && (
+                    <>
+                      <th style={th}>Revised Start</th>
+                      <th style={th}>Revised Finish</th>
+                    </>
+                  )}
                   <th style={th}>State</th>
                   <th style={th}></th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {rows.map((r) => {
+                  const origInvalid = isInvalidRange(r.original_start, r.original_finish);
+                  const revInvalid = isInvalidRange(r.revised_start, r.revised_finish);
+                  return (
                   <tr
                     key={r.id}
                     onDragOver={(e) => {
@@ -210,9 +234,19 @@ export default function Editor({
                     </td>
                     <td style={td}><input value={r.milestone} onChange={(e) => updateRow(r.id, { milestone: e.target.value })} style={{ ...txt, minWidth: 220 }} /></td>
                     <td style={td}><input type="date" value={r.original_start ?? ''} onChange={(e) => updateRow(r.id, { original_start: e.target.value || null })} style={txt} /></td>
-                    <td style={td}><input type="date" value={r.original_finish ?? ''} onChange={(e) => updateRow(r.id, { original_finish: e.target.value || null })} style={txt} /></td>
-                    <td style={td}><input type="date" value={r.revised_start ?? ''} onChange={(e) => updateRow(r.id, { revised_start: e.target.value || null })} style={txt} /></td>
-                    <td style={td}><input type="date" value={r.revised_finish ?? ''} onChange={(e) => updateRow(r.id, { revised_finish: e.target.value || null })} style={txt} /></td>
+                    <td style={td}>
+                      <input type="date" value={r.original_finish ?? ''} onChange={(e) => updateRow(r.id, { original_finish: e.target.value || null })}
+                        style={origInvalid ? invalidTxt : txt} title={origInvalid ? "Finish date can't be before start date" : undefined} />
+                    </td>
+                    {showRevised && (
+                      <>
+                        <td style={td}><input type="date" value={r.revised_start ?? ''} onChange={(e) => updateRow(r.id, { revised_start: e.target.value || null })} style={txt} /></td>
+                        <td style={td}>
+                          <input type="date" value={r.revised_finish ?? ''} onChange={(e) => updateRow(r.id, { revised_finish: e.target.value || null })}
+                            style={revInvalid ? invalidTxt : txt} title={revInvalid ? "Revised finish can't be before revised start" : undefined} />
+                        </td>
+                      </>
+                    )}
                     <td style={td}>
                       <select value={r.state} onChange={(e) => updateRow(r.id, { state: e.target.value as RowState })} style={sel}>
                         <option value="active">Active</option><option value="done">Done</option><option value="external">External</option>
@@ -220,7 +254,8 @@ export default function Editor({
                     </td>
                     <td style={td}><button style={{ ...mini, color: '#d60023' }} onClick={() => deleteRow(r.id)}>✕</button></td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -231,8 +266,10 @@ export default function Editor({
 }
 
 const dateInp: React.CSSProperties = { marginLeft: 6, padding: '4px 6px', border: '1px solid #c8d0da', borderRadius: 4 };
+const invalidDateInp: React.CSSProperties = { ...dateInp, borderColor: '#d60023', background: '#fdeaea' };
 const th: React.CSSProperties = { padding: '6px 8px', fontWeight: 600, whiteSpace: 'nowrap' };
 const td: React.CSSProperties = { padding: '4px 8px', verticalAlign: 'middle' };
 const txt: React.CSSProperties = { padding: '5px 7px', border: '1px solid #dbe1e8', borderRadius: 4, fontSize: 12.5 };
+const invalidTxt: React.CSSProperties = { ...txt, borderColor: '#d60023', background: '#fdeaea' };
 const sel: React.CSSProperties = { padding: '5px 6px', border: '1px solid #dbe1e8', borderRadius: 4, fontSize: 12.5, background: '#fff' };
 const mini: React.CSSProperties = { border: '1px solid #dbe1e8', background: '#fff', borderRadius: 4, padding: '2px 6px', marginRight: 3, fontSize: 12 };
