@@ -13,16 +13,33 @@ Deploy target: Vercel.
 
 ## Current status
 
-**Phase 1 (core editor) is scaffolded and verified** — passes `npx tsc --noEmit` and
-`next build`. Not yet run against a live Supabase project or deployed.
+**Phase 1 (core editor) is built, verified end-to-end against a live Supabase project, and
+deployed to production.** Passes `npx tsc --noEmit` and `npm run build`.
+
+- Production: https://timeline-builder-ten.vercel.app
+- GitHub: github.com/christianpisasale/timeline-builder (`main` branch; Vercel auto-deploys
+  on every push)
 
 Built so far:
 - Email sign-in/sign-up (Supabase Auth), session middleware, route protection
 - Dashboard: list timelines, create new ones seeded with default squads
-- Editor: edit title/description/chart dates; live React chart preview (ported from the
-  original HTML renderer); row table to add/delete/reorder/edit every field
+- Editor: title/description/chart dates, live chart preview, row table with drag-to-reorder
+  (with a drop-position indicator), add/delete (delete asks for confirmation via a themed
+  modal, not `window.confirm`)
+- **Squad management is its own page** (`/timeline/[id]/squads`), linked from "Manage
+  squads" in the editor — add/rename/recolour/reorder/delete squads per timeline
+- **Autosave**: every edit (timeline meta, rows, squads) saves automatically ~1s after the
+  user stops changing it. No manual save button. Held back while any date range is invalid.
+- **Date validation**: a finish date before its start date (original, revised, or chart
+  start/end) is flagged inline (red border) and blocks autosave until fixed.
+- **Design refresh applied app-wide**: lavender/pastel visual language (Plus Jakarta Sans,
+  `#7C6BD6` primary) replacing the original navy/blue scaffold styling — see "Design system"
+  below. Purely visual; no functional change from the refresh itself.
 - Schema (`supabase/schema.sql`): profiles, timelines, squads, rows, notes + row-level
-  security (org-based: same-org users read, owner edits)
+  security (org-based: same-org users read, owner edits). The `handle_new_user` trigger
+  needs `set search_path = public` — without it every sign-up fails with an opaque
+  "Database error saving new user" (a common Supabase gotcha). Already patched both in the
+  schema file and on the live project.
 
 ## Decisions already made — do NOT change these without asking the user
 
@@ -30,16 +47,44 @@ Built so far:
   a bigger job than it looks and not urgent.
 - **Team sharing is org-based.** Every profile defaults to `org = 'bupa'`. RLS lets
   same-org users *read* each other's timelines; only the owner can *edit*.
-- **Rows carry BOTH original and revised** start/finish dates. The chart renders *revised*;
-  when revised differs from original it draws a faint dashed "baseline" bar behind the solid
-  bar to show slippage. This is a first pass and open to change — but change it deliberately,
-  not by accident.
+- **Revised dates are an explicit, off-by-default toggle** ("Show revised dates", next to
+  Chart start/end). This replaced an earlier always-on design where the chart rendered
+  revised-over-original automatically:
+  - **Off** (default): chart and row table show only Original Start/Finish. Revised columns
+    are hidden entirely, in both the chart and the table.
+  - **On**: chart and table also show Revised Start/Finish as extra columns. A row's
+    revised bar/diamond only appears on the chart once that row actually has a revised date
+    entered (drawn as a dashed outline over the always-present solid original bar/diamond) —
+    new rows start with revised dates `null`, not auto-filled to the chart start.
+  - The chart's row order always mirrors the table's manual drag order (`sort_order`); it
+    never independently re-sorts by date. (This was a real bug — the chart used to silently
+    re-sort by original start date, ignoring drag order, whenever two rows had different
+    dates. Fixed — don't reintroduce a date-based sort in `TimelineChart.tsx`.)
 - **Row states: active / done / external**, each with distinct styling (done = greyed +
-  tick; external = muted text + dashed outline bar; active = full colour). This visual
-  language was carefully tuned; preserve the intent.
-- **Renderer parity matters.** `components/TimelineChart.tsx` is a port of a polished HTML
-  timeline. Squad tints, RAG letters (G/A/R), bars vs diamonds, the dotted "today" line,
-  and the three row states are all deliberate. Keep them.
+  tick badge; external = muted italic text + dashed outline bar/border; active = full
+  colour). This visual language was carefully tuned; preserve the intent even as exact
+  colours evolve.
+- **Design system (lavender refresh)** — don't silently revert to the old navy/blue palette:
+  - Font: **Plus Jakarta Sans** (Google Fonts, loaded in `app/layout.tsx`)
+  - Primary: `#7C6BD6` (hover `#6B5AC9`); page background gradient `#F6F4FC → #F3F1F9`
+  - Cards: white, `1px solid #ECE9F6` border, `24px` radius, soft shadow
+    (`0 10px 34px rgba(88,74,140,.06)`)
+  - Danger/delete: `#D9776F` text on `#FCEDED` bg (icon buttons), solid `#D9776F` for the
+    ConfirmModal's destructive action button
+  - Squad chip/bar colours are **derived** from each squad's stored `bar_color` (darken
+    ~35% for chip text via `darkenHex`, alpha `.4` for shadows via `hexToRgba`, both in
+    `lib/timeline.ts`) rather than a hardcoded palette, since squads are fully user-defined
+    (name + tint + bar colour, editable on the squads page)
+  - Full token reference (colours, spacing, exact component specs) was in a design handoff
+    at `~/Downloads/design_handoff_timeline_builder/` — it may or may not still exist on
+    disk; the values actually implemented in `globals.css` / component files are the
+    current source of truth either way
+- **Delete confirmations** use a shared `components/ConfirmModal.tsx`, not
+  `window.confirm()` — keep using it for any new destructive actions so the UI stays
+  consistent (and because native browser dialogs can't be restyled to match the design).
+- **Renderer parity/behaviour** — `components/TimelineChart.tsx`: squad chips, RAG badges
+  (G/A/R + a "none" state), bars vs diamonds, the dashed "today" line, the three row
+  states, and the revised-date overlay are all deliberate. Keep them.
 
 ## Roadmap
 
@@ -50,42 +95,60 @@ Built so far:
   Claude, validate the structured edit it returns, apply it. Needs `ANTHROPIC_API_KEY`
   (separate billing from Supabase/Vercel). Keep Claude's edits structured + validated +
   undoable; never let the model write directly to the DB or UI.
-- **Phase 4:** notes displayed above the timeline (`notes` table already exists), polish,
-  per-squad colour editing UI.
+- **Phase 4:** notes displayed above the timeline (`notes` table already exists), per-squad
+  colour editing UI (already partly done via the squads page — revisit scope here).
 
-Do not jump ahead. Finish and verify the current phase before starting the next, and get
-the user to confirm the core editor works end-to-end before building Phase 2.
+Do not jump ahead without the user's go-ahead.
 
 ## Setup / running locally
 
-1. `npm install` (node_modules and package-lock.json were stripped from the handoff, so the
-   first install regenerates the lockfile).
-2. Verify: `npx tsc --noEmit` then `npm run build`.
-3. The user creates a Supabase project and runs `supabase/schema.sql` in its SQL editor.
-4. `cp .env.local.example .env.local` and fill in `NEXT_PUBLIC_SUPABASE_URL` and
-   `NEXT_PUBLIC_SUPABASE_ANON_KEY` from Supabase → Project Settings → API.
-5. `npm run dev`, open http://localhost:3000.
+Already set up, deployed, and in active use — this is for a fresh clone / new machine.
+
+1. `npm install`
+2. `cp .env.local.example .env.local` and fill in `NEXT_PUBLIC_SUPABASE_URL` and
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` — ask the user for these; they're already live on
+   Supabase + Vercel but not committed to the repo.
+3. `npx tsc --noEmit` then `npm run build` to verify.
+4. `npm run dev`, open http://localhost:3000.
+
+**Never run `npm run build` while `npm run dev` is active against the same working copy** —
+they share `.next` and will corrupt each other's build output (symptom: `Cannot find module
+'./vendor-chunks/...'` errors). Stop one before running the other.
+
+## Deployment
+
+- GitHub: github.com/christianpisasale/timeline-builder, `main` branch
+- Vercel project `timeline-builder` (scope `touch-fuzzy-get-dizzy`), linked to the GitHub
+  repo — pushes to `main` auto-deploy
+- Production: https://timeline-builder-ten.vercel.app
+- Env vars are set on Vercel for Production/Preview/Development already
 
 ## Project structure
 
 ```
 app/
-  layout.tsx            root layout + fonts
-  globals.css           shared styles/tokens
+  layout.tsx            root layout + Plus Jakarta Sans font
+  globals.css           shared styles/tokens (lavender design system)
   page.tsx              dashboard (list + create)
   actions.ts            server actions (create timeline, sign out)
   login/page.tsx        auth
   timeline/[id]/
     page.tsx            loads a timeline server-side
-    Editor.tsx          client editor (chart + row table + save)
+    Editor.tsx          client editor (meta + chart + row table, autosave)
+    squads/
+      page.tsx           loads squads server-side
+      SquadsManager.tsx  client squad manager (autosave)
 components/
-  TimelineChart.tsx     the renderer (ported from the HTML)
+  TimelineChart.tsx     the renderer
+  ConfirmModal.tsx      themed delete-confirmation modal (row/squad deletes)
 lib/
-  timeline.ts           types + date/geometry helpers
+  timeline.ts           types + date/geometry helpers + colour helpers
+                         (darkenHex, hexToRgba — derive squad chip/shadow colours)
   supabase-browser.ts   client-side Supabase
   supabase-server.ts    server-side Supabase
 middleware.ts           session refresh + route protection
 supabase/schema.sql     database schema + RLS
+.claude/launch.json     dev server config (for the Browser preview tool)
 ```
 
 ## Conventions
@@ -94,3 +157,16 @@ supabase/schema.sql     database schema + RLS
 - Australian English in UI copy. No em dashes (use hyphens or restructure).
 - The user prefers concise, direct communication and wants to confirm architectural
   changes before they happen. Ask before large refactors.
+- **Verify UI/behaviour changes in the browser before calling something done** — this
+  project has a `.claude/launch.json` dev server config for the Browser preview tool.
+  Several real bugs (chart bars bleeding past their columns, drag order not reflected in
+  the chart, React style-mixing warnings) were only caught this way, not by
+  typecheck/build.
+- Native browser drag-and-drop and `window.confirm()` dialogs can't be triggered by
+  synthetic mouse clicks in the preview tool — verify them by dispatching real
+  `DragEvent`s (as two separate `javascript_exec` calls, not one — React needs a render
+  between `dragstart` and `drop`) or by temporarily monkey-patching `window.confirm` to
+  return `true`/`false`.
+- Don't leave test/placeholder data in the live "Test Timeline" after verifying a
+  feature — clean up rows/titles/squads added for testing, or clearly flag them as
+  intentional test fixtures if leaving them in place.
