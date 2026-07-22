@@ -35,12 +35,31 @@ export interface Timeline {
   first_sprint_no: number | null;
 }
 
-export const RAG_META: Record<Rag, { letter: string; name: string; col: string }> = {
-  green: { letter: 'G', name: 'On track', col: '#2e9e4f' },
-  amber: { letter: 'A', name: 'Managing', col: '#e8a13a' },
-  red: { letter: 'R', name: 'Needs resolution', col: '#d60023' },
-  none: { letter: '', name: '', col: '#c3c9d1' },
+export const RAG_META: Record<Rag, { letter: string; name: string; bg: string; text: string }> = {
+  green: { letter: 'G', name: 'On track', bg: '#D9F0DE', text: '#3E9558' },
+  amber: { letter: 'A', name: 'Managing', bg: '#FBEBCF', text: '#BE8A2A' },
+  red: { letter: 'R', name: 'Needs resolution', bg: '#FADBDB', text: '#C0504F' },
+  none: { letter: '–', name: 'None', bg: '#F4F1FC', text: '#9490AC' },
 };
+
+// Derive a readable chip-text shade and a soft drop-shadow tint from a
+// squad's stored bar colour, so any user-picked colour (not just a fixed
+// palette) gets consistent chip/shadow treatment.
+export function darkenHex(hex: string, amount: number) {
+  const h = hex.replace('#', '');
+  const r = Math.round(parseInt(h.substring(0, 2), 16) * (1 - amount));
+  const g = Math.round(parseInt(h.substring(2, 4), 16) * (1 - amount));
+  const b = Math.round(parseInt(h.substring(4, 6), 16) * (1 - amount));
+  const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, '0');
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
+export function hexToRgba(hex: string, alpha: number) {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 // --- date helpers ---
 const DAY = 864e5;

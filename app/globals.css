@@ -1,37 +1,70 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { min-height: 100%; }
 body {
-  font-family: 'Montserrat', Arial, sans-serif;
-  color: #21272a;
-  background: #e9edf2;
+  font-family: 'Plus Jakarta Sans', system-ui, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: #2E2A45;
+  background: linear-gradient(180deg, #F6F4FC 0%, #F3F1F9 100%);
+  background-attachment: fixed;
   line-height: 1.5;
 }
-a { color: #0079c8; text-decoration: none; }
-a:hover { text-decoration: underline; }
+a { color: #7C6BD6; text-decoration: none; }
+a:hover { color: #5B4FB0; text-decoration: underline; }
 button { font-family: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; }
+input[type="date"]::-webkit-calendar-picker-indicator { opacity: .5; cursor: pointer; }
+::placeholder { color: #B7B3C9; }
+
 .btn {
-  background: #0079c8; color: #fff; border: none; border-radius: 4px;
-  padding: 9px 16px; font-weight: 600; font-size: 14px;
+  background: #7C6BD6; color: #fff; border: none; border-radius: 12px;
+  padding: 11px 18px; font-weight: 700; font-size: 15px;
+  box-shadow: 0 6px 16px rgba(124,107,214,.32);
+  transition: background-color .12s;
 }
-.btn:hover { background: #0069b0; }
-.btn-ghost { background: #fff; color: #0d1846; border: 1px solid #c8d0da; }
-.btn-ghost:hover { background: #f4f9fe; }
+.btn:hover { background: #6B5AC9; }
+.btn-ghost {
+  background: #fff; color: #4B4763; border: 1px solid #E6E3F2; box-shadow: none;
+}
+.btn-ghost:hover { background: #F4F1FC; }
 .card {
-  background: #fff; border: 1px solid #c8d0da; border-radius: 6px;
-  box-shadow: 0 4px 18px rgba(13,24,70,.08);
+  background: #fff; border: 1px solid #ECE9F6; border-radius: 24px;
+  box-shadow: 0 10px 34px rgba(88,74,140,.06);
 }
 .editable-field {
   border: 1px solid transparent;
-  border-radius: 4px;
+  border-radius: 10px;
   padding: 10px 12px;
   transition: background-color .12s, border-color .12s;
 }
 .editable-field:hover:not(:disabled) {
-  background: #f7f9fb;
-  border-color: #dbe1e8;
+  background: #FAF9FE;
+  border-color: #ECE9F6;
 }
 .editable-field:focus:not(:disabled) {
   background: #fff;
-  border-color: #0079c8;
+  border-color: #7C6BD6;
   outline: none;
 }
+.bordered-field { outline: none; transition: border-color .12s; }
+.bordered-field:focus:not(:disabled) { border-color: #7C6BD6; }
+
+.row-card { border: 1px solid #F0EDF8; transition: border-color .12s; }
+.row-card:hover { border-color: #DED8F2; }
+
+.icon-delete-btn {
+  width: 32px; height: 32px; border: none; background: #FCEDED; color: #D9776F;
+  border-radius: 9px; font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: background-color .12s;
+}
+.icon-delete-btn:hover { background: #F8DAD8; }
+
+.icon-mini-btn {
+  width: 24px; height: 24px; border: 1px solid #E6E3F2; background: #fff; color: #6C6885;
+  border-radius: 8px; font-size: 12px; display: flex; align-items: center; justify-content: center;
+  transition: background-color .12s;
+}
+.icon-mini-btn:hover:not(:disabled) { background: #F4F1FC; }
+.icon-mini-btn:disabled { opacity: .4; cursor: default; }
+
+.timeline-card { color: inherit; text-decoration: none; transition: border-color .12s, box-shadow .12s; }
+.timeline-card:hover { color: inherit; text-decoration: none; border-color: #DED8F2; box-shadow: 0 12px 30px rgba(88,74,140,.10); }
