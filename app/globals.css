@@ -1,0 +1,22 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Montserrat', Arial, sans-serif;
+  color: #21272a;
+  background: #e9edf2;
+  line-height: 1.5;
+}
+a { color: #0079c8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { font-family: inherit; cursor: pointer; }
+input, select, textarea { font-family: inherit; }
+.btn {
+  background: #0079c8; color: #fff; border: none; border-radius: 4px;
+  padding: 9px 16px; font-weight: 600; font-size: 14px;
+}
+.btn:hover { background: #0069b0; }
+.btn-ghost { background: #fff; color: #0d1846; border: 1px solid #c8d0da; }
+.btn-ghost:hover { background: #f4f9fe; }
+.card {
+  background: #fff; border: 1px solid #c8d0da; border-radius: 6px;
+  box-shadow: 0 4px 18px rgba(13,24,70,.08);
+}
