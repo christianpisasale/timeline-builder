@@ -10,6 +10,7 @@ const COL = { squad: 120, rag: 58, milestone: 150, date: 70, revDate: 88 };
 const LABEL_MIN_W = COL.squad + COL.rag + COL.milestone + COL.date * 2;
 const REVISED_MIN_W = COL.revDate * 2;
 const COL_BORDER = '1px solid #EFEBF7';
+const DAY = 86400000;
 
 export default function TimelineChart({
   timeline, squads, rows, showRevised = false,
@@ -21,7 +22,9 @@ export default function TimelineChart({
   const sorted = [...rows].sort((a, b) => a.sort_order - b.sort_order);
 
   const cs = parseDate(timeline.chart_start).getTime();
-  const ce = parseDate(timeline.chart_end).getTime();
+  // exclusive upper bound (start of the day *after* chart_end), so the chart's
+  // final day gets a full day's width instead of collapsing to a zero-width point
+  const ce = parseDate(timeline.chart_end).getTime() + DAY;
   const range = ce - cs;
   const valid = range > 0;
   const pctOf = (d: Date) => ((d.getTime() - cs) / range) * 100;
@@ -37,7 +40,7 @@ export default function TimelineChart({
       const mStart = cur < start ? start : cur;
       const mEnd = new Date(cur.getFullYear(), cur.getMonth() + 1, 0);
       const segEnd = mEnd > end ? end : mEnd;
-      months.push({ label: MON[cur.getMonth()], from: pctOf(mStart), to: pctOf(segEnd) });
+      months.push({ label: MON[cur.getMonth()], from: pctOf(mStart), to: pctOf(new Date(segEnd.getTime() + DAY)) });
       cur = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
     }
   }
@@ -45,7 +48,7 @@ export default function TimelineChart({
   // today line
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayInRange = valid && today.getTime() >= cs && today.getTime() <= ce;
+  const todayInRange = valid && today.getTime() >= cs && today.getTime() < ce;
   const todayLeft = `${pctOf(today)}%`;
 
   // weekly gridlines + week-start ticks, anchored to Monday
@@ -91,7 +94,7 @@ export default function TimelineChart({
         {/* week row */}
         <div style={{ display: 'flex', marginBottom: 2 }}>
           <div style={{ flex: 1, minWidth: labelMinWidth }} />
-          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, borderBottom: '1px solid #E7E3F5', ...trackBg }}>
+          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, ...trackBg }}>
             {weeks.map((w, i) => (
               <div key={i} style={{ position: 'absolute', left: `${w.left}%`, top: 4, transform: 'translateX(-50%)', fontSize: 11, fontWeight: 600, color: '#A79ED0', fontVariantNumeric: 'tabular-nums' }}>{w.label}</div>
             ))}
@@ -195,7 +198,7 @@ function markerRect(startIso: string | null, finishIso: string | null, isDiamond
   if (!startIso || !finishIso) return null;
   const ds = parseDate(startIso), df = parseDate(finishIso);
   if (df < ds) return null;
-  let l = pctOf(ds), r = pctOf(df);
+  let l = pctOf(ds), r = pctOf(new Date(df.getTime() + DAY));
   if (r <= 0 || l >= 100) return null;
   l = Math.max(l, 0); r = Math.min(r, 100);
   return { left: l, width: Math.max(r - l, 0.6) };
