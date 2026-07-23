@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase-browser';
 import { Row, Squad, Timeline, Rag, RowState } from '@/lib/timeline';
-import TimelineChart from '@/components/TimelineChart';
+import TimelineChart, { ZOOM_LEVELS, DEFAULT_PX_PER_DAY } from '@/components/TimelineChart';
 import ConfirmModal from '@/components/ConfirmModal';
 
 function isInvalidRange(start: string | null, finish: string | null) {
@@ -34,6 +34,7 @@ export default function Editor({
   const [copied, setCopied] = useState(false);
   const [confirmRegen, setConfirmRegen] = useState(false);
   const [origin, setOrigin] = useState('');
+  const [zoomIndex, setZoomIndex] = useState(ZOOM_LEVELS.indexOf(DEFAULT_PX_PER_DAY));
 
   useEffect(() => { setOrigin(window.location.origin); }, []);
 
@@ -233,7 +234,14 @@ export default function Editor({
 
       {/* chart preview */}
       <div className="card" style={{ padding: 26, marginBottom: 22 }}>
-        <TimelineChart timeline={liveTimeline} squads={squads} rows={rows} showRevised={showRevised} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#9490AC', marginRight: 2 }}>Zoom</span>
+          <button className="icon-mini-btn" style={{ width: 30, height: 30, fontSize: 16 }} disabled={zoomIndex === 0}
+            onClick={() => setZoomIndex((z) => Math.max(0, z - 1))} title="Zoom out">&minus;</button>
+          <button className="icon-mini-btn" style={{ width: 30, height: 30, fontSize: 16 }} disabled={zoomIndex === ZOOM_LEVELS.length - 1}
+            onClick={() => setZoomIndex((z) => Math.min(ZOOM_LEVELS.length - 1, z + 1))} title="Zoom in">+</button>
+        </div>
+        <TimelineChart timeline={liveTimeline} squads={squads} rows={rows} showRevised={showRevised} pxPerDay={ZOOM_LEVELS[zoomIndex]} />
       </div>
 
       {/* row editor */}

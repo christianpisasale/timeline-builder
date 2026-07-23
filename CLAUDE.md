@@ -94,6 +94,14 @@ Built so far:
     14px diamond/radius 2. A Bar-type row needs *both* a start and finish date to render
     anything (a milestone still renders from just one date) — matches the handoff exactly,
     a change from the previous "finish defaults to start" behaviour.
+  - **Chart zoom (pixels-per-day) is local UI state, not persisted.** A longer date range
+    now widens the horizontally-scrollable chart (`ZOOM_LEVELS` in `TimelineChart.tsx`,
+    controlled by +/- buttons in `Editor.tsx`) instead of squeezing everything into a fixed
+    width. Deliberately not saved per-timeline (no schema change, resets to
+    `DEFAULT_PX_PER_DAY` on reload) — revisit only if users actually want it sticky.
+    `PrintableTimeline`/the public share page don't pass `pxPerDay` at all, so they always
+    render at the default density — zoom is an editing convenience, not something that
+    should affect the exported PDF, which already scales-to-fit one page regardless.
   - **Dashboard status pill** (Active/At risk/Complete) is a **derived heuristic**
     (`deriveTimelineState` in `lib/timeline.ts`), not a stored field: Complete once
     `chart_end` has passed, At risk if any row's RAG is red, Active otherwise. If a real

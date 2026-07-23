@@ -5,7 +5,6 @@ import {
   fmtDate, parseDate, darkenHex,
 } from '@/lib/timeline';
 
-const TRACK_W = 640;
 const COL = { squad: 120, rag: 58, milestone: 150, date: 70, revDate: 88 };
 const LABEL_MIN_W = COL.squad + COL.rag + COL.milestone + COL.date * 2;
 const REVISED_MIN_W = COL.revDate * 2;
@@ -14,9 +13,16 @@ const DAY = 86400000;
 const GRID_INSET_THRESHOLD = 14;
 const GRID_INSET_BUFFER = 3;
 
+// Zoom = pixels of track width per day. A longer date range makes the chart
+// wider (horizontally scrollable) rather than squeezing the same fixed width.
+// Print/share callers omit pxPerDay and get this default, since that view
+// always scales-to-fit one page regardless of the underlying width anyway.
+export const ZOOM_LEVELS = [3, 5, 7, 10, 14, 20, 28, 40];
+export const DEFAULT_PX_PER_DAY = 7;
+
 export default function TimelineChart({
-  timeline, squads, rows, showRevised = false,
-}: { timeline: Timeline; squads: Squad[]; rows: Row[]; showRevised?: boolean }) {
+  timeline, squads, rows, showRevised = false, pxPerDay = DEFAULT_PX_PER_DAY,
+}: { timeline: Timeline; squads: Squad[]; rows: Row[]; showRevised?: boolean; pxPerDay?: number }) {
   const squadById = new Map(squads.map((s) => [s.id, s]));
   const labelMinWidth = LABEL_MIN_W + (showRevised ? REVISED_MIN_W : 0);
 
@@ -55,6 +61,7 @@ export default function TimelineChart({
 
   // weekly gridlines + week-start ticks, anchored to Monday
   const totalDaysMs = valid ? range / 86400000 : 1;
+  const TRACK_W = Math.round(totalDaysMs * pxPerDay);
   const startDow = valid ? parseDate(timeline.chart_start).getDay() : 1;
   const addToMonday = (1 - startDow + 7) % 7;
   const weekPx = (TRACK_W * 7) / totalDaysMs;
