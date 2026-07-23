@@ -98,6 +98,14 @@ Built so far:
     (`deriveTimelineState` in `lib/timeline.ts`), not a stored field: Complete once
     `chart_end` has passed, At risk if any row's RAG is red, Active otherwise. If a real
     status field gets added later, replace the heuristic rather than layering on top of it.
+  - **Dashboard is split into "My timelines" / "Org timelines" sections** (`app/page.tsx`),
+    replacing an earlier single-grid layout with an "Owner · editable" / "Read-only" badge
+    on every card. That badge was low-signal (obviously-true on your own cards, and just a
+    limitation-without-context on others') — sectioning already communicates ownership, so
+    it's gone from "My timelines" cards entirely. "Org timelines" cards show **"Owned by
+    {name}"** instead (looked up from `profiles.full_name`, falling back to `email`, then
+    `'Someone'`) — actionable info (who to ask), not just a status label. The "Org
+    timelines" section is omitted entirely when empty rather than shown with a blank state.
   - Full token reference (colours, spacing, exact component specs) is in the design handoff
     at `~/Downloads/design_handoff_timeline_builder 2/` — it may or may not still exist on
     disk; the values actually implemented in `globals.css` / component files are the
