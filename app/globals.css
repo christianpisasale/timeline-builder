@@ -18,7 +18,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { opacity: .5; cursor: poi
 .btn {
   background: #7C6BD6; color: #fff; border: none; border-radius: 12px;
   padding: 11px 18px; font-weight: 700; font-size: 15px;
-  box-shadow: 0 6px 16px rgba(124,107,214,.32);
   transition: background-color .12s;
 }
 .btn:hover { background: #6B5AC9; }

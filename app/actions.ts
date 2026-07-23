@@ -3,12 +3,14 @@ import { createClient } from '@/lib/supabase-server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
+// Colours drawn from the curated squad palette (lib/timeline.ts's
+// SQUAD_TINTS/SQUAD_BARS) so freshly-seeded squads already match a swatch.
 const DEFAULT_SQUADS = [
-  { name: 'Orange',    tint: '#e6f2fb', bar_color: '#0079c8', sort_order: 0 },
-  { name: 'Thunder',   tint: '#e0f2f1', bar_color: '#007d79', sort_order: 1 },
-  { name: 'Atlantis',  tint: '#eaf4fc', bar_color: '#51a0dc', sort_order: 2 },
-  { name: 'Digital',   tint: '#efeaf7', bar_color: '#491d8b', sort_order: 3 },
-  { name: 'Programme', tint: '#f2f3f6', bar_color: '#491d8b', sort_order: 4 },
+  { name: 'Orange',    tint: '#FCE4D2', bar_color: '#E8843C', sort_order: 0 },
+  { name: 'Atlantis',  tint: '#D6F0EC', bar_color: '#2FA392', sort_order: 1 },
+  { name: 'Thunder',   tint: '#E6E3FB', bar_color: '#7A63E0', sort_order: 2 },
+  { name: 'Rose',      tint: '#FBE0EA', bar_color: '#D65C92', sort_order: 3 },
+  { name: 'Sky',       tint: '#D9EAFB', bar_color: '#3E86D6', sort_order: 4 },
 ];
 
 export async function createTimeline() {

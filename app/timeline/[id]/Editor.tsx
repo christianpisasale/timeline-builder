@@ -119,8 +119,8 @@ export default function Editor({
 
   const rowToDelete = rows.find((r) => r.id === confirmDeleteId);
   const gridCols = showRevised
-    ? '30px 150px 84px 130px 1.5fr 160px 160px 160px 160px 130px 40px'
-    : '30px 150px 84px 130px 1.5fr 160px 160px 130px 40px';
+    ? '24px 132px 96px 116px 1.5fr 132px 132px 132px 132px 120px 38px'
+    : '24px 132px 96px 116px 1.5fr 132px 132px 120px 38px';
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 34px 60px' }}>
@@ -195,34 +195,27 @@ export default function Editor({
                 const origInvalid = isInvalidRange(r.original_start, r.original_finish);
                 const revInvalid = isInvalidRange(r.revised_start, r.revised_finish);
                 return (
-                  <div
-                    key={r.id}
-                    className="row-card"
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
-                      setDropTarget({ id: r.id, pos });
-                    }}
-                    onDrop={() => {
-                      if (dragRowId) reorderRow(dragRowId, r.id, dropTarget?.pos ?? 'before');
-                      setDragRowId(null);
-                      setDropTarget(null);
-                    }}
-                    style={{
-                      display: 'grid', gridTemplateColumns: gridCols, gap: 12, alignItems: 'center',
-                      background: '#FAF9FE', borderRadius: 14, padding: '9px 6px 9px 4px',
-                      opacity: dragRowId === r.id ? 0.4 : 1,
-                      // longhand-only override, kept separate from the row-card class's
-                      // shorthand `border` so React never sees both on the same style object
-                      ...(dropTarget?.id === r.id ? {
-                        borderLeft: '1px solid #7C6BD6',
-                        borderRight: '1px solid #7C6BD6',
-                        borderTop: dropTarget.pos === 'before' ? '2px solid #7C6BD6' : '1px solid #7C6BD6',
-                        borderBottom: dropTarget.pos === 'after' ? '2px solid #7C6BD6' : '1px solid #7C6BD6',
-                      } : {}),
-                    }}
-                  >
+                  <div key={r.id}>
+                    <DropLine show={dropTarget?.id === r.id && dropTarget.pos === 'before'} />
+                    <div
+                      className="row-card"
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const pos = e.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+                        setDropTarget({ id: r.id, pos });
+                      }}
+                      onDrop={() => {
+                        if (dragRowId) reorderRow(dragRowId, r.id, dropTarget?.pos ?? 'before');
+                        setDragRowId(null);
+                        setDropTarget(null);
+                      }}
+                      style={{
+                        display: 'grid', gridTemplateColumns: gridCols, gap: 12, alignItems: 'center',
+                        background: '#FAF9FE', borderRadius: 14, padding: '9px 6px 9px 4px',
+                        opacity: dragRowId === r.id ? 0.4 : 1,
+                      }}
+                    >
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
                       <div
                         draggable
@@ -256,7 +249,11 @@ export default function Editor({
                     <select value={r.state} onChange={(e) => updateRow(r.id, { state: e.target.value as RowState })} className="bordered-field" style={sel}>
                       <option value="active">Active</option><option value="done">Done</option><option value="external">External</option>
                     </select>
-                    <button className="icon-delete-btn" title="Delete row" onClick={() => setConfirmDeleteId(r.id)}>×</button>
+                    <button className="icon-delete-btn" style={{ width: 38, height: 38 }} title="Delete row" onClick={() => setConfirmDeleteId(r.id)}>
+                      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2 L12 12 M12 2 L2 12" stroke="#D9776F" strokeWidth={2} strokeLinecap="round" /></svg>
+                    </button>
+                    </div>
+                    <DropLine show={dropTarget?.id === r.id && dropTarget.pos === 'after'} />
                   </div>
                 );
               })}
@@ -267,8 +264,8 @@ export default function Editor({
 
       <ConfirmModal
         open={!!confirmDeleteId}
-        title="Delete row?"
-        message={`Delete "${rowToDelete?.milestone || 'this row'}"? This can't be undone.`}
+        title={`Delete "${rowToDelete?.milestone || 'this row'}"?`}
+        message="This can't be undone."
         onCancel={() => setConfirmDeleteId(null)}
         onConfirm={() => { if (confirmDeleteId) deleteRow(confirmDeleteId); setConfirmDeleteId(null); }}
       />
@@ -278,10 +275,12 @@ export default function Editor({
 
 function SaveStatus({ saving, dirty, invalid }: { saving: boolean; dirty: boolean; invalid: boolean }) {
   const label = invalid ? 'Fix invalid dates to save' : saving ? 'Saving…' : dirty ? 'Unsaved changes…' : 'All changes saved';
-  const color = invalid ? '#D9776F' : dirty || saving ? '#8A86A0' : '#63C29A';
+  const color = invalid ? '#C0504F' : saving || dirty ? '#8A86A0' : '#63C29A';
+  const dot = invalid ? '#C0504F' : saving ? '#B9A96B' : dirty ? '#C9C2E4' : '#63C29A';
+  const glow = invalid ? 'rgba(192,80,79,.16)' : saving ? 'rgba(185,169,107,.2)' : dirty ? 'rgba(201,194,228,.3)' : 'rgba(99,194,154,.16)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 9, fontSize: 14, fontWeight: 600, color }}>
-      <span style={{ width: 8, height: 8, borderRadius: 999, background: color, boxShadow: `0 0 0 4px ${color}29` }} />
+      <span style={{ width: 8, height: 8, borderRadius: 999, background: dot, boxShadow: `0 0 0 4px ${glow}` }} />
       {label}
     </div>
   );
@@ -289,6 +288,11 @@ function SaveStatus({ saving, dirty, invalid }: { saving: boolean; dirty: boolea
 
 function GridLabel({ children }: { children: React.ReactNode }) {
   return <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, color: '#9490AC' }}>{children}</div>;
+}
+
+function DropLine({ show }: { show?: boolean }) {
+  if (!show) return null;
+  return <div style={{ height: 3, background: '#7C6BD6', borderRadius: 999, margin: '3px 6px' }} />;
 }
 
 const dateLabel: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 7, fontSize: 13, fontWeight: 600, color: '#8A86A0' };

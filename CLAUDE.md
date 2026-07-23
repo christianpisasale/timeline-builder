@@ -35,6 +35,10 @@ Built so far:
 - **Design refresh applied app-wide**: lavender/pastel visual language (Plus Jakarta Sans,
   `#7C6BD6` primary) replacing the original navy/blue scaffold styling — see "Design system"
   below. Purely visual; no functional change from the refresh itself.
+- **Second design pass ("Claude Design" handoff) applied app-wide**: brought the app in line
+  with a high-fidelity handoff (`~/Downloads/design_handoff_timeline_builder 2/`) covering all
+  four screens. Beyond visual polish this added real features/behaviour changes — see the
+  updated "Design system" bullet below for what changed and why.
 - Schema (`supabase/schema.sql`): profiles, timelines, squads, rows, notes + row-level
   security (org-based: same-org users read, owner edits). The `handle_new_user` trigger
   needs `set search_path = public` — without it every sign-up fails with an opaque
@@ -71,12 +75,31 @@ Built so far:
     (`0 10px 34px rgba(88,74,140,.06)`)
   - Danger/delete: `#D9776F` text on `#FCEDED` bg (icon buttons), solid `#D9776F` for the
     ConfirmModal's destructive action button
-  - Squad chip/bar colours are **derived** from each squad's stored `bar_color` (darken
-    ~35% for chip text via `darkenHex`, alpha `.4` for shadows via `hexToRgba`, both in
-    `lib/timeline.ts`) rather than a hardcoded palette, since squads are fully user-defined
-    (name + tint + bar colour, editable on the squads page)
-  - Full token reference (colours, spacing, exact component specs) was in a design handoff
-    at `~/Downloads/design_handoff_timeline_builder/` — it may or may not still exist on
+  - **Buttons carry no box-shadow** (cards and modals still do — `.btn`/`.btn-ghost` in
+    `globals.css`, ConfirmModal's destructive button)
+  - **Squad colours are a curated palette, not a free colour wheel.** `SQUAD_TINTS` /
+    `SQUAD_BARS` in `lib/timeline.ts` (10 swatches each). The squads page shows a swatch-grid
+    popover instead of a native colour input — this is a deliberate capability change from
+    the earlier free-form picker, per the design handoff's README. Tint and bar are still
+    picked independently (not fixed pairs), so chip *text* colour is still derived via
+    `darkenHex(bar_color, .35)` (kept from the earlier design) rather than using the raw bar
+    colour, to guarantee contrast regardless of which swatch pairing a user picks.
+  - **Squad-chip radius is intentionally mixed**, reproducing the handoff's own two screens
+    exactly rather than resolving the inconsistency: **4px squared** in the Gantt chart
+    (`TimelineChart.tsx`), **999px pill** on dashboard cards and the squads-manager preview
+    column. If asked to make chips consistent, confirm which shape first.
+  - **Gantt chart** (`TimelineChart.tsx`) now also renders **weekly gridlines + a
+    day-of-month week strip** (weeks anchored to Monday) under the month header — this is a
+    new feature, not just a restyle. Markers are flat (no `box-shadow`): 15px bar/radius 3,
+    14px diamond/radius 2. A Bar-type row needs *both* a start and finish date to render
+    anything (a milestone still renders from just one date) — matches the handoff exactly,
+    a change from the previous "finish defaults to start" behaviour.
+  - **Dashboard status pill** (Active/At risk/Complete) is a **derived heuristic**
+    (`deriveTimelineState` in `lib/timeline.ts`), not a stored field: Complete once
+    `chart_end` has passed, At risk if any row's RAG is red, Active otherwise. If a real
+    status field gets added later, replace the heuristic rather than layering on top of it.
+  - Full token reference (colours, spacing, exact component specs) is in the design handoff
+    at `~/Downloads/design_handoff_timeline_builder 2/` — it may or may not still exist on
     disk; the values actually implemented in `globals.css` / component files are the
     current source of truth either way
 - **Delete confirmations** use a shared `components/ConfirmModal.tsx`, not
