@@ -11,6 +11,8 @@ const LABEL_MIN_W = COL.squad + COL.rag + COL.milestone + COL.date * 2;
 const REVISED_MIN_W = COL.revDate * 2;
 const COL_BORDER = '1px solid #EFEBF7';
 const DAY = 86400000;
+const GRID_INSET_THRESHOLD = 14;
+const GRID_INSET_BUFFER = 3;
 
 export default function TimelineChart({
   timeline, squads, rows, showRevised = false,
@@ -59,6 +61,12 @@ export default function TimelineChart({
   const offsetPx = (TRACK_W * addToMonday) / totalDaysMs;
   const gridBg = `repeating-linear-gradient(to right, rgba(107,90,201,.10) 0, rgba(107,90,201,.10) 1px, transparent 1px, transparent ${weekPx}px)`;
   const trackBg: React.CSSProperties = { backgroundImage: gridBg, backgroundPosition: `${offsetPx}px 0` };
+  // the first Monday can land anywhere from 0-6 days after chart_start, so its
+  // gridline tick can coincidentally fall close enough to the track's own left
+  // border to look like a doubled-up line. Mask it out whenever it would land
+  // inside that keep-clear zone; otherwise there's already enough natural gap.
+  const gridInset = offsetPx < GRID_INSET_THRESHOLD ? offsetPx + GRID_INSET_BUFFER : GRID_INSET_BUFFER;
+  const gridMask = `linear-gradient(to right, transparent 0 ${gridInset}px, black ${gridInset}px)`;
 
   const weeks: { label: string; left: number }[] = [];
   if (valid) {
@@ -77,7 +85,7 @@ export default function TimelineChart({
         {/* month strip */}
         <div style={{ display: 'flex', marginBottom: 6 }}>
           <div style={{ flex: 1, minWidth: labelMinWidth }} />
-          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 34, borderBottom: '1px solid #E7E3F5' }}>
+          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 34, borderLeft: '1px solid #E7E3F5', borderBottom: '1px solid #E7E3F5' }}>
             {months.map((m, i) => (
               <div key={i} style={{
                 position: 'absolute', top: 0, bottom: 0, left: `${m.from}%`,
@@ -94,7 +102,8 @@ export default function TimelineChart({
         {/* week row */}
         <div style={{ display: 'flex', marginBottom: 2 }}>
           <div style={{ flex: 1, minWidth: labelMinWidth }} />
-          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, ...trackBg }}>
+          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, borderLeft: '1px solid #E7E3F5' }}>
+            <div style={{ position: 'absolute', inset: 0, ...trackBg, WebkitMaskImage: gridMask, maskImage: gridMask, WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }} />
             {weeks.map((w, i) => (
               <div key={i} style={{ position: 'absolute', left: `${w.left}%`, top: 4, transform: 'translateX(-50%)', fontSize: 11, fontWeight: 600, color: '#A79ED0', fontVariantNumeric: 'tabular-nums' }}>{w.label}</div>
             ))}
@@ -116,7 +125,7 @@ export default function TimelineChart({
               </>
             )}
           </div>
-          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px` }} />
+          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, borderLeft: '1px solid #E7E3F5' }} />
         </div>
 
         {/* empty state */}
@@ -173,7 +182,8 @@ export default function TimelineChart({
               {/* track: clipped so bars/baselines for dates outside the chart
                   window are cut off here instead of bleeding into the label
                   columns to the left */}
-              <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: '100%', overflow: 'hidden', borderLeft: '1px solid #E7E3F5', ...trackBg }}>
+              <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: '100%', overflow: 'hidden', borderLeft: '1px solid #E7E3F5' }}>
+                <div style={{ position: 'absolute', inset: 0, ...trackBg, WebkitMaskImage: gridMask, maskImage: gridMask, WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat', WebkitMaskSize: '100% 100%', maskSize: '100% 100%' }} />
                 {todayInRange && <div style={{ position: 'absolute', top: 0, bottom: 0, left: todayLeft, width: 0, borderLeft: '1.5px dashed #B5ADD6' }} />}
                 {renderMarkers(r, sq, done, external, showRevised, pctOf, valid)}
               </div>
