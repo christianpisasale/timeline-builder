@@ -5,8 +5,8 @@ import {
   fmtDate, parseDate, darkenHex,
 } from '@/lib/timeline';
 
-const COL = { squad: 120, rag: 58, milestone: 150, date: 70, revDate: 88 };
-const LABEL_MIN_W = COL.squad + COL.rag + COL.milestone + COL.date * 2;
+const COL = { num: 28, squad: 120, rag: 58, milestone: 150, date: 70, revDate: 88 };
+const LABEL_MIN_W = COL.num + COL.squad + COL.rag + COL.milestone + COL.date * 2;
 const REVISED_MIN_W = COL.revDate * 2;
 const COL_BORDER = '1px solid #EFEBF7';
 const DAY = 86400000;
@@ -120,6 +120,7 @@ export default function TimelineChart({
         {/* column header */}
         <div style={{ display: 'flex', background: '#F4F1FC', height: 40, alignItems: 'center', borderTop: '1px solid #E7E3F5', borderBottom: '1px solid #E7E3F5' }}>
           <div style={{ flex: 1, minWidth: labelMinWidth, display: 'flex', alignItems: 'center' }}>
+            <HeaderCell w={COL.num}>#</HeaderCell>
             <HeaderCell w={COL.squad} align="left">SQUAD</HeaderCell>
             <HeaderCell w={COL.rag}>RAG</HeaderCell>
             <HeaderCell w={COL.milestone} grow align="left">MILESTONES</HeaderCell>
@@ -152,6 +153,7 @@ export default function TimelineChart({
           return (
             <div key={r.id} style={{ display: 'flex', height: 38, alignItems: 'center', borderBottom: '1px solid #F2EFF9', background: zebra }}>
               <div style={{ flex: 1, minWidth: labelMinWidth, display: 'flex', alignItems: 'center' }}>
+                <Cell w={COL.num} style={{ color: '#B7B3C9', fontWeight: 600, fontSize: 12 }}>{i + 1}</Cell>
                 <Cell w={COL.squad} align="left">
                   {external ? (
                     <span style={chipStyle('#F4F1FC', '#9490AC', true)}>External</span>

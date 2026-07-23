@@ -158,8 +158,8 @@ export default function Editor({
 
   const rowToDelete = rows.find((r) => r.id === confirmDeleteId);
   const gridCols = showRevised
-    ? '24px 132px 96px 116px 1.5fr 132px 132px 132px 132px 120px 38px'
-    : '24px 132px 96px 116px 1.5fr 132px 132px 120px 38px';
+    ? '24px 24px 132px 96px 116px 1.5fr 132px 132px 132px 132px 120px 38px'
+    : '24px 24px 132px 96px 116px 1.5fr 132px 132px 120px 38px';
 
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 34px 60px' }}>
@@ -255,6 +255,7 @@ export default function Editor({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: showRevised ? 1400 : 1100 }}>
               <div style={{ display: 'grid', gridTemplateColumns: gridCols, gap: 12, alignItems: 'center', padding: '0 6px 10px' }}>
                 <div />
+                <GridLabel>#</GridLabel>
                 <GridLabel>SQUAD</GridLabel>
                 <GridLabel>RAG</GridLabel>
                 <GridLabel>TYPE</GridLabel>
@@ -271,7 +272,7 @@ export default function Editor({
                 <div />
               </div>
 
-              {rows.map((r) => {
+              {rows.map((r, rowIndex) => {
                 const origInvalid = isInvalidRange(r.original_start, r.original_finish);
                 const revInvalid = isInvalidRange(r.revised_start, r.revised_finish);
                 return (
@@ -305,6 +306,7 @@ export default function Editor({
                         title="Drag to reorder"
                       />
                     </div>
+                    <div style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: '#B7B3C9' }}>{rowIndex + 1}</div>
                     <select value={r.squad_id ?? ''} onChange={(e) => updateRow(r.id, { squad_id: e.target.value || null })} className="bordered-field" style={sel}>
                       {squads.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                     </select>
