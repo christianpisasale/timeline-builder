@@ -163,35 +163,7 @@ export default function Editor({
   return (
     <div style={{ maxWidth: 1400, margin: '0 auto', padding: '28px 34px 60px' }}>
       <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
-          <Link href="/" style={{ fontSize: 15, fontWeight: 600 }}>&larr; All timelines</Link>
-          {isOwner && (
-            <Link href={`/timeline/${timeline.id}/squads`} style={{ fontSize: 15, fontWeight: 600 }}>Manage squads</Link>
-          )}
-          <Link href={`/timeline/${timeline.id}/print`} style={{ fontSize: 15, fontWeight: 600 }}>Export PDF</Link>
-          {isOwner && (
-            <div data-share-picker style={{ position: 'relative' }}>
-              <button className="btn btn-ghost" onClick={() => setShareOpen((o) => !o)}>Share</button>
-              {shareOpen && (
-                <div style={{ position: 'absolute', top: 44, left: 0, zIndex: 20, width: 340, background: '#fff', border: '1px solid #ECE9F6', borderRadius: 16, padding: 18, boxShadow: '0 16px 40px rgba(88,74,140,.16)' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#4B4763', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={isPublic} onChange={(e) => togglePublic(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#7C6BD6', cursor: 'pointer' }} />
-                    Public view-only link
-                  </label>
-                  {isPublic && publicSlug && (
-                    <>
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <input readOnly value={`${origin}/share/${publicSlug}`} style={{ flex: 1, minWidth: 0, border: '1px solid #E6E3F2', background: '#FAF9FE', borderRadius: 10, padding: '8px 10px', fontSize: 13, color: '#3A3654' }} />
-                        <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
-                      </div>
-                      <button className="btn btn-ghost" style={{ marginTop: 10, padding: '8px 12px', fontSize: 13 }} onClick={() => setConfirmRegen(true)}>Regenerate link</button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <Link href="/" style={{ fontSize: 15, fontWeight: 600 }}>&larr; All timelines</Link>
         <div style={{ flex: 1 }} />
         {isOwner && <SaveStatus saving={saving} dirty={dirty} invalid={hasInvalidDates} />}
       </div>
@@ -207,9 +179,39 @@ export default function Editor({
 
       {/* meta */}
       <div className="card" style={{ padding: '34px 38px', marginBottom: 22 }}>
-        <input value={title} disabled={!isOwner} className="editable-field"
-          onChange={(e) => { setTitle(e.target.value); markDirty(); }}
-          style={{ fontSize: 32, fontWeight: 800, letterSpacing: -0.5, color: '#2E2A45', width: '100%' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 26 }}>
+          <input value={title} disabled={!isOwner} className="editable-field"
+            onChange={(e) => { setTitle(e.target.value); markDirty(); }}
+            style={{ flex: 1, minWidth: 0, fontSize: 32, fontWeight: 800, letterSpacing: -0.5, color: '#2E2A45' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 26, flexShrink: 0 }}>
+            {isOwner && (
+              <Link href={`/timeline/${timeline.id}/squads`} style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>Manage squads</Link>
+            )}
+            <Link href={`/timeline/${timeline.id}/print`} style={{ fontSize: 15, fontWeight: 600, whiteSpace: 'nowrap' }}>Export PDF</Link>
+            {isOwner && (
+              <div data-share-picker style={{ position: 'relative' }}>
+                <button className="btn btn-ghost" onClick={() => setShareOpen((o) => !o)}>Share</button>
+                {shareOpen && (
+                  <div style={{ position: 'absolute', top: 44, right: 0, zIndex: 20, width: 340, background: '#fff', border: '1px solid #ECE9F6', borderRadius: 16, padding: 18, boxShadow: '0 16px 40px rgba(88,74,140,.16)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#4B4763', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={isPublic} onChange={(e) => togglePublic(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#7C6BD6', cursor: 'pointer' }} />
+                      Public view-only link
+                    </label>
+                    {isPublic && publicSlug && (
+                      <>
+                        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                          <input readOnly value={`${origin}/share/${publicSlug}`} style={{ flex: 1, minWidth: 0, border: '1px solid #E6E3F2', background: '#FAF9FE', borderRadius: 10, padding: '8px 10px', fontSize: 13, color: '#3A3654' }} />
+                          <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
+                        </div>
+                        <button className="btn btn-ghost" style={{ marginTop: 10, padding: '8px 12px', fontSize: 13 }} onClick={() => setConfirmRegen(true)}>Regenerate link</button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
         <textarea value={description} disabled={!isOwner} placeholder="Description shown above the timeline..." className="bordered-field"
           onChange={(e) => { setDescription(e.target.value); markDirty(); }}
           rows={2}
