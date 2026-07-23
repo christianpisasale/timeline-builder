@@ -108,12 +108,40 @@ Built so far:
 - **Renderer parity/behaviour** — `components/TimelineChart.tsx`: squad chips, RAG badges
   (G/A/R + a "none" state), bars vs diamonds, the dashed "today" line, the three row
   states, and the revised-date overlay are all deliberate. Keep them.
+- **PDF export is browser-print, not a server-rendered file.** `components/PrintableTimeline.tsx`
+  renders the title/description/date range + `TimelineChart` inside a container with
+  `@page { size: A3 landscape }` CSS; an "Export PDF" button just calls `window.print()` and
+  the user saves as PDF from the native dialog. Deliberately avoided a serverless
+  Puppeteer/headless-Chrome route (cold starts, function size limits on Vercel) for a
+  one-extra-click alternative that needs no new dependency.
+  - **Always scales to fit one page**, never spills to a second page. A `ResizeObserver`
+    measures the natural (unscaled) content size and applies `transform: scale()`, capped at
+    1 (never enlarges a small timeline past its natural size). Very large timelines (50–100
+    rows) will render with small text on that one page — this was a deliberate trade-off,
+    not an oversight.
+- **Public share links**: `setPublicSharing`/`regenerateLink`/`copyLink` live directly in
+  `app/timeline/[id]/Editor.tsx` (client-side, via the browser Supabase client — same
+  pattern as every other mutation there), not as `app/actions.ts` server actions, since the
+  Editor already manages all its own mutations that way. The slug is a 12-char
+  `crypto.randomUUID()` slice (Web Crypto, already relied on elsewhere in this file for temp
+  row ids) — no new dependency like `nanoid`.
+  - **Disabling a share link keeps the stored `public_slug`** rather than clearing it, so
+    re-enabling restores the same URL people may have bookmarked. "Regenerate link" is the
+    only way to invalidate a leaked link, and confirms via `ConfirmModal` first since it's
+    a destructive action for anyone still holding the old URL.
+  - `app/share/[slug]/page.tsx` is unauthenticated by design — `middleware.ts` already
+    exempted `/share` from the auth redirect, and RLS already permits anonymous reads where
+    `is_public = true` on all four tables. The lookup filters on **both**
+    `public_slug` and `is_public = true`, so a disabled link 404s exactly like a slug that
+    never existed (doesn't leak whether a timeline exists).
 
 ## Roadmap
 
 - **Phase 1 (done):** core editor
-- **Phase 2 (next):** single-page A3 landscape PDF export + view-only public share links.
-  Schema already has `is_public` and `public_slug` columns on `timelines`.
+- **Phase 2 (done):** single-page A3 landscape PDF export (`components/PrintableTimeline.tsx`,
+  `app/timeline/[id]/print/page.tsx`) + view-only public share links
+  (`app/share/[slug]/page.tsx`, share controls in `Editor.tsx`'s top bar). See the design
+  system bullets above for the architecture decisions.
 - **Phase 3:** AI chat editing — send the timeline JSON + a natural-language instruction to
   Claude, validate the structured edit it returns, apply it. Needs `ANTHROPIC_API_KEY`
   (separate billing from Supabase/Vercel). Keep Claude's edits structured + validated +

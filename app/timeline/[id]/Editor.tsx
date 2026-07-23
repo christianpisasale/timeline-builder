@@ -10,9 +10,11 @@ function isInvalidRange(start: string | null, finish: string | null) {
   return !!(start && finish && finish < start);
 }
 
+type TimelineWithSharing = Timeline & { owner_id: string; is_public: boolean; public_slug: string | null };
+
 export default function Editor({
   timeline, initialSquads, initialRows, isOwner,
-}: { timeline: Timeline & { owner_id: string }; initialSquads: Squad[]; initialRows: Row[]; isOwner: boolean }) {
+}: { timeline: TimelineWithSharing; initialSquads: Squad[]; initialRows: Row[]; isOwner: boolean }) {
   const supabase = createClient();
   const [squads] = useState<Squad[]>(initialSquads);
   const [rows, setRows] = useState<Row[]>(initialRows);
@@ -26,6 +28,42 @@ export default function Editor({
   const [dropTarget, setDropTarget] = useState<{ id: string; pos: 'before' | 'after' } | null>(null);
   const [showRevised, setShowRevised] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [isPublic, setIsPublic] = useState(timeline.is_public);
+  const [publicSlug, setPublicSlug] = useState(timeline.public_slug);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [confirmRegen, setConfirmRegen] = useState(false);
+  const [origin, setOrigin] = useState('');
+
+  useEffect(() => { setOrigin(window.location.origin); }, []);
+
+  useEffect(() => {
+    if (!shareOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (!(e.target as HTMLElement).closest('[data-share-picker]')) setShareOpen(false);
+    }
+    window.addEventListener('mousedown', onDocClick);
+    return () => window.removeEventListener('mousedown', onDocClick);
+  }, [shareOpen]);
+
+  function genSlug() {
+    return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+  }
+  async function togglePublic(next: boolean) {
+    const slug = next && !publicSlug ? genSlug() : publicSlug;
+    const { error } = await supabase.from('timelines').update({ is_public: next, public_slug: slug }).eq('id', timeline.id);
+    if (!error) { setIsPublic(next); setPublicSlug(slug); }
+  }
+  async function regenerateLink() {
+    const slug = genSlug();
+    const { error } = await supabase.from('timelines').update({ public_slug: slug }).eq('id', timeline.id);
+    if (!error) setPublicSlug(slug);
+  }
+  async function copyLink() {
+    await navigator.clipboard.writeText(`${origin}/share/${publicSlug}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
 
   const liveTimeline: Timeline = { ...timeline, title, description, chart_start: chartStart, chart_end: chartEnd };
 
@@ -130,10 +168,42 @@ export default function Editor({
           {isOwner && (
             <Link href={`/timeline/${timeline.id}/squads`} style={{ fontSize: 15, fontWeight: 600 }}>Manage squads</Link>
           )}
+          <Link href={`/timeline/${timeline.id}/print`} style={{ fontSize: 15, fontWeight: 600 }}>Export PDF</Link>
+          {isOwner && (
+            <div data-share-picker style={{ position: 'relative' }}>
+              <button className="btn btn-ghost" onClick={() => setShareOpen((o) => !o)}>Share</button>
+              {shareOpen && (
+                <div style={{ position: 'absolute', top: 44, left: 0, zIndex: 20, width: 340, background: '#fff', border: '1px solid #ECE9F6', borderRadius: 16, padding: 18, boxShadow: '0 16px 40px rgba(88,74,140,.16)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, fontWeight: 600, color: '#4B4763', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isPublic} onChange={(e) => togglePublic(e.target.checked)} style={{ width: 18, height: 18, accentColor: '#7C6BD6', cursor: 'pointer' }} />
+                    Public view-only link
+                  </label>
+                  {isPublic && publicSlug && (
+                    <>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                        <input readOnly value={`${origin}/share/${publicSlug}`} style={{ flex: 1, minWidth: 0, border: '1px solid #E6E3F2', background: '#FAF9FE', borderRadius: 10, padding: '8px 10px', fontSize: 13, color: '#3A3654' }} />
+                        <button className="btn btn-ghost" style={{ padding: '8px 12px', fontSize: 13 }} onClick={copyLink}>{copied ? 'Copied' : 'Copy'}</button>
+                      </div>
+                      <button className="btn btn-ghost" style={{ marginTop: 10, padding: '8px 12px', fontSize: 13 }} onClick={() => setConfirmRegen(true)}>Regenerate link</button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div style={{ flex: 1 }} />
         {isOwner && <SaveStatus saving={saving} dirty={dirty} invalid={hasInvalidDates} />}
       </div>
+
+      <ConfirmModal
+        open={confirmRegen}
+        title="Regenerate share link?"
+        message="The current link will stop working immediately — anyone still using it will lose access."
+        confirmLabel="Regenerate"
+        onCancel={() => setConfirmRegen(false)}
+        onConfirm={() => { setConfirmRegen(false); regenerateLink(); }}
+      />
 
       {/* meta */}
       <div className="card" style={{ padding: '34px 38px', marginBottom: 22 }}>
