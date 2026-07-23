@@ -4,6 +4,10 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Timeline Builder',
   description: 'Build and share delivery roadmaps',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/app-icon.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
