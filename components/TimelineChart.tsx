@@ -10,7 +10,6 @@ const LABEL_MIN_W = COL.num + COL.squad + COL.rag + COL.milestone + COL.date * 2
 const REVISED_MIN_W = COL.revDate * 2;
 const COL_BORDER = '1px solid #EFEBF7';
 const DAY = 86400000;
-const GRID_INSET_THRESHOLD = 14;
 const GRID_INSET_BUFFER = 3;
 
 // Zoom = pixels of track width per day. A longer date range makes the chart
@@ -68,11 +67,12 @@ export default function TimelineChart({
   const offsetPx = (TRACK_W * addToMonday) / totalDaysMs;
   const gridBg = `repeating-linear-gradient(to right, rgba(107,90,201,.10) 0, rgba(107,90,201,.10) 1px, transparent 1px, transparent ${weekPx}px)`;
   const trackBg: React.CSSProperties = { backgroundImage: gridBg, backgroundPosition: `${offsetPx}px 0` };
-  // the first Monday can land anywhere from 0-6 days after chart_start, so its
-  // gridline tick can coincidentally fall close enough to the track's own left
-  // border to look like a doubled-up line. Mask it out whenever it would land
-  // inside that keep-clear zone; otherwise there's already enough natural gap.
-  const gridInset = offsetPx < GRID_INSET_THRESHOLD ? offsetPx + GRID_INSET_BUFFER : GRID_INSET_BUFFER;
+  // The first Monday can land anywhere from 0-6 days after chart_start, so its
+  // gridline tick is never far enough from the track's own left border to read
+  // as a deliberate, separate line — it just looks like a stray double border.
+  // Always mask through it; gridlines start visibly from the second Monday,
+  // which is guaranteed a full week (weekPx) clear of the border.
+  const gridInset = offsetPx + GRID_INSET_BUFFER;
   const gridMask = `linear-gradient(to right, transparent 0 ${gridInset}px, black ${gridInset}px)`;
 
   const weeks: { label: string; left: number }[] = [];
