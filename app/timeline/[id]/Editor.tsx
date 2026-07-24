@@ -236,10 +236,14 @@ export default function Editor({
       <div className="card" style={{ padding: 26, marginBottom: 22 }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: '#9490AC', marginRight: 2 }}>Zoom</span>
-          <button className="icon-mini-btn" style={{ width: 30, height: 30, fontSize: 16 }} disabled={zoomIndex === 0}
-            onClick={() => setZoomIndex((z) => Math.max(0, z - 1))} title="Zoom out">&minus;</button>
-          <button className="icon-mini-btn" style={{ width: 30, height: 30, fontSize: 16 }} disabled={zoomIndex === ZOOM_LEVELS.length - 1}
-            onClick={() => setZoomIndex((z) => Math.min(ZOOM_LEVELS.length - 1, z + 1))} title="Zoom in">+</button>
+          <button className="icon-mini-btn" style={{ width: 30, height: 30 }} disabled={zoomIndex === 0}
+            onClick={() => setZoomIndex((z) => Math.max(0, z - 1))} title="Zoom out">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6 L10 6" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" /></svg>
+          </button>
+          <button className="icon-mini-btn" style={{ width: 30, height: 30 }} disabled={zoomIndex === ZOOM_LEVELS.length - 1}
+            onClick={() => setZoomIndex((z) => Math.min(ZOOM_LEVELS.length - 1, z + 1))} title="Zoom in">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 2 L6 10 M2 6 L10 6" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" /></svg>
+          </button>
         </div>
         <TimelineChart timeline={liveTimeline} squads={squads} rows={rows} showRevised={showRevised} pxPerDay={ZOOM_LEVELS[zoomIndex]} />
       </div>

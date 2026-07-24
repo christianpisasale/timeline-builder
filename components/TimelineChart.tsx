@@ -99,7 +99,10 @@ export default function TimelineChart({
                 width: `${m.to - m.from}%`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700, letterSpacing: 0.8, color: '#9A93BE',
-                background: i % 2 ? 'transparent' : 'rgba(124,107,214,.05)', borderLeft: '1px solid #E1DCEF',
+                background: i % 2 ? 'transparent' : 'rgba(124,107,214,.05)',
+                // skip the divider on the first month — it would sit right next to
+                // the track's own left border and read as a doubled-up line
+                borderLeft: i === 0 ? undefined : '1px solid #E1DCEF',
               }}>{m.label}</div>
             ))}
             {todayInRange && <div style={{ position: 'absolute', top: 0, bottom: 0, left: todayLeft, width: 0, borderLeft: '1.5px dashed #B5ADD6' }} />}
