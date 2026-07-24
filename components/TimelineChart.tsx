@@ -272,7 +272,7 @@ function badgeStyle(bg: string, text: string): React.CSSProperties {
 
 function HeaderCell({ w, children, align = 'center', grow = false, border = false, color = '#8A82AE' }: { w: number; children: React.ReactNode; align?: 'left' | 'center'; grow?: boolean; border?: boolean; color?: string }) {
   return (
-    <div style={{ flex: grow ? `1 1 ${w}px` : `0 0 ${w}px`, minWidth: grow ? w : undefined, padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center', fontSize: 12, fontWeight: 700, letterSpacing: 0.6, color, borderLeft: border ? COL_BORDER : undefined }}>
+    <div style={{ flex: grow ? `1 1 ${w}px` : `0 0 ${w}px`, minWidth: grow ? w : 0, padding: '0 14px', display: 'flex', alignItems: 'center', justifyContent: align === 'left' ? 'flex-start' : 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontSize: 12, fontWeight: 700, letterSpacing: 0.6, color, borderLeft: border ? COL_BORDER : undefined }}>
       {children}
     </div>
   );
