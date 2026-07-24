@@ -57,15 +57,16 @@ export default function TimelineChart({
   const todayInRange = valid && today.getTime() >= cs && today.getTime() < ce;
   const todayLeft = `${pctOf(today)}%`;
 
-  // weekly gridlines + week-start ticks, anchored to Monday
+  // weekly gridlines + week-start ticks, anchored to Monday.
+  // Rendered as individually-positioned elements (same technique as the week
+  // labels below) rather than a single CSS repeating-gradient background —
+  // browsers can rasterize a fractional-width repeating gradient differently
+  // enough to produce a stray visible seam, which a set of real elements
+  // sidesteps entirely.
   const totalDaysMs = valid ? range / 86400000 : 1;
   const TRACK_W = Math.round(totalDaysMs * pxPerDay);
   const startDow = valid ? parseDate(timeline.chart_start).getDay() : 1;
   const addToMonday = (1 - startDow + 7) % 7;
-  const weekPx = (TRACK_W * 7) / totalDaysMs;
-  const offsetPx = (TRACK_W * addToMonday) / totalDaysMs;
-  const gridBg = `repeating-linear-gradient(to right, rgba(107,90,201,.10) 0, rgba(107,90,201,.10) 1px, transparent 1px, transparent ${weekPx}px)`;
-  const trackBg: React.CSSProperties = { backgroundImage: gridBg, backgroundPosition: `${offsetPx}px 0` };
 
   const weeks: { label: string; left: number }[] = [];
   if (valid) {
@@ -104,7 +105,8 @@ export default function TimelineChart({
         {/* week row */}
         <div style={{ display: 'flex', marginBottom: 2 }}>
           <div style={{ flex: 1, minWidth: labelMinWidth }} />
-          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, borderLeft: '1px solid #E7E3F5', ...trackBg }}>
+          <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: 22, borderLeft: '1px solid #E7E3F5' }}>
+            <WeekGridlines weeks={weeks} />
             {weeks.map((w, i) => (
               <div key={i} style={{ position: 'absolute', left: `${w.left}%`, top: 4, transform: 'translateX(-50%)', fontSize: 11, fontWeight: 600, color: '#A79ED0', fontVariantNumeric: 'tabular-nums' }}>{w.label}</div>
             ))}
@@ -185,7 +187,8 @@ export default function TimelineChart({
               {/* track: clipped so bars/baselines for dates outside the chart
                   window are cut off here instead of bleeding into the label
                   columns to the left */}
-              <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: '100%', overflow: 'hidden', borderLeft: '1px solid #E7E3F5', ...trackBg }}>
+              <div style={{ width: TRACK_W, flex: `0 0 ${TRACK_W}px`, position: 'relative', height: '100%', overflow: 'hidden', borderLeft: '1px solid #E7E3F5' }}>
+                <WeekGridlines weeks={weeks} />
                 {todayInRange && <div style={{ position: 'absolute', top: 0, bottom: 0, left: todayLeft, width: 0, borderLeft: '1.5px dashed #B5ADD6' }} />}
                 {renderMarkers(r, sq, done, external, showRevised, pctOf, valid)}
               </div>
@@ -194,6 +197,16 @@ export default function TimelineChart({
         })}
       </div>
     </div>
+  );
+}
+
+function WeekGridlines({ weeks }: { weeks: { left: number }[] }) {
+  return (
+    <>
+      {weeks.map((w, i) => (
+        <div key={i} style={{ position: 'absolute', top: 0, bottom: 0, left: `${w.left}%`, width: 0, borderLeft: '1px solid rgba(107,90,201,.10)' }} />
+      ))}
+    </>
   );
 }
 
